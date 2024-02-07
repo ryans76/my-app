@@ -2,7 +2,8 @@ trigger:
 - master
 
 pool:
-  vmImage: ubuntu-latest
+  # vmImage: ubuntu-latest
+  name: local 
 
 variables:
   phpVersion: 8.2
