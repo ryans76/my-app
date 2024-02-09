@@ -4,7 +4,8 @@ WORKDIR /var/www/html/
 
 # Essentials
 RUN echo "UTC" > /etc/timezone
-RUN apk add --no-cache zip unzip curl sqlite nginx supervisor
+RUN apk add --no-cache zip unzip curl nginx
+# RUN apk add --no-cache zip unzip curl sqlite nginx supervisor
 
 # Installing bash
 RUN apk add bash
@@ -31,20 +32,19 @@ RUN apk add --no-cache php83 \
     php83-simplexml \
     php83-dom \
     php83-pdo_mysql \
-    php83-pdo_sqlite \
     php83-tokenizer \
     php83-pecl-redis
 
 RUN ln -s /usr/bin/php83 /usr/bin/php
 
 # Installing composer
-RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-RUN rm -rf composer-setup.php
+# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
+# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+# RUN rm -rf composer-setup.php
 
 # Configure supervisor
-RUN mkdir -p /etc/supervisor.d/
-COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
+# RUN mkdir -p /etc/supervisor.d/
+# COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
 
 # Configure PHP
 RUN mkdir -p /run/php/
@@ -69,4 +69,4 @@ RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
 EXPOSE 80
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+# CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
