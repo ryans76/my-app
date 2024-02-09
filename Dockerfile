@@ -7,8 +7,8 @@ RUN echo "UTC" > /etc/timezone
 RUN apk add --no-cache zip unzip curl sqlite nginx supervisor
 
 # Installing bash
-RUN apk add bash
-RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+# RUN apk add bash
+# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 # Installing PHP
 RUN apk add --no-cache php82 \
@@ -38,13 +38,13 @@ RUN apk add --no-cache php82 \
 #RUN ln -s /usr/bin/php82 /usr/bin/php
 
 # Installing composer
-RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-RUN rm -rf composer-setup.php
+# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
+# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+# RUN rm -rf composer-setup.php
 
 # Configure supervisor
-RUN mkdir -p /etc/supervisor.d/
-COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
+# RUN mkdir -p /etc/supervisor.d/
+# COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
 
 # Configure PHP
 RUN mkdir -p /run/php/
@@ -64,9 +64,9 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
-COPY . .
-RUN composer install --no-dev
-RUN chown -R nobody:nobody /var/www/html/storage
+# COPY . .
+# RUN composer install --no-dev
+# RUN chown -R nobody:nobody /var/www/html/storage
 
 EXPOSE 80
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+# CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
