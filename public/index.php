@@ -1,3 +1,4 @@
+Laravel!
 <?php
 phpinfo();
 die();
