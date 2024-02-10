@@ -65,7 +65,7 @@ RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
 COPY . .
-RUN composer install --no-dev
+# RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
 EXPOSE 80
