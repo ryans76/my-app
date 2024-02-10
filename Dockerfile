@@ -38,9 +38,9 @@ RUN apk add --no-cache php83 \
 RUN ln -s /usr/bin/php83 /usr/bin/php
 
 # Installing composer
-# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-# RUN rm -rf composer-setup.php
+RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
+RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN rm -rf composer-setup.php
 
 # Configure supervisor
 RUN mkdir -p /etc/supervisor.d/
