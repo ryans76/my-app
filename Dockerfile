@@ -1,10 +1,10 @@
-FROM alpine:latest
+FROM alpine:latest as base
 
 WORKDIR /var/www/html/
 
 # Essentials
 RUN echo "UTC" > /etc/timezone
-RUN apk add --no-cache zip unzip curl nginx supervisor
+RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev
 # RUN apk add --no-cache zip unzip curl sqlite nginx supervisor
 
 # Installing bash
@@ -60,11 +60,28 @@ COPY .docker/nginx-laravel.conf /etc/nginx/modules/
 RUN mkdir -p /run/nginx/
 RUN touch /run/nginx/nginx.pid
 
+# Create Supervisor log and PID directories
+RUN mkdir -p /var/log/supervisor
+RUN mkdir -p /var/run/supervisor
+RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
+
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
-COPY . .
+COPY system/ ./
+COPY ops/ /var/ops
+
+# CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
+RUN mkdir -p ./storage/framework/cache
+RUN mkdir -p ./storage/framework/sessions
+RUN mkdir -p ./storage/framework/testing
+RUN mkdir -p ./storage/framework/views
+RUN mkdir -p ./storage/logs
+
+RUN npm install -g yarn
+RUN yarn install
+
 RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
