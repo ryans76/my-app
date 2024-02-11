@@ -69,7 +69,8 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
-COPY system/ /var/www/html/.
+COPY system/ /var/www/html
+RUN mkdir -p /var/ops
 COPY ops/ /var/ops
 
 # CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
@@ -82,7 +83,7 @@ RUN mkdir -p ./storage/logs
 RUN npm install -g yarn
 RUN yarn install
 
-RUN composer install --no-dev
+# RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
 EXPOSE 80
