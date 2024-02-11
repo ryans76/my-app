@@ -41,8 +41,11 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: Set up working directory. $GITHUB_WORKSPACE
+        run: cd $GITHUB_WORKSPACE  # Set the working directory to the root of the repository
+
       - name: Copy prod.env to .env
-        run: cp /ops/production/prod.env .env
+        run: cp ops/production/prod.env .env
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
