@@ -69,7 +69,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
-COPY system/ ./
+COPY system/ /var/www/html/.
 COPY ops/ /var/ops
 
 # CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
