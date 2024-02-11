@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: get file directory
         run: |
-          ls -la
+          pwd
 
       # - name: Copy prod.env to .env
         # run: cp ops/production/prod.env .env
