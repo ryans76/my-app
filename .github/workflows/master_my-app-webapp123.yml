@@ -41,12 +41,8 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: get file directory
-        run: |
-          pwd
-
-      # - name: Copy prod.env to .env
-        # run: cp ops/production/prod.env .env
+      - name: Copy prod.env to .env
+        run: cp ../ops/production/prod.env .env
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
