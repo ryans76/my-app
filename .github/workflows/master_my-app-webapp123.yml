@@ -17,7 +17,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Copy prod.env to .env
-        run: cp ops/production/prod.env .env
+        run: |
+          ls -la
+        run: cp ops/production/prod.env system/.env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
