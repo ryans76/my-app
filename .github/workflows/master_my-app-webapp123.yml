@@ -16,6 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Copy prod.env to .env
+        run: cp ops/production/prod.env .env
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -41,9 +44,6 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Copy prod.env to .env
-        run: cp ../ops/production/prod.env .env
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
