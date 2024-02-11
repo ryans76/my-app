@@ -16,12 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Copy prod.env to .env
+        run: cp ops/production/prod.env system/.env
+
       - name: List
         run: |
           ls -la system
-
-      - name: Copy prod.env to .env
-        run: cp ops/production/prod.env system/.env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
