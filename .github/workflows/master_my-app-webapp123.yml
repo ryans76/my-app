@@ -18,7 +18,7 @@ jobs:
 
       - name: List
         run: |
-          ls -la
+          ls -la system
 
       - name: Copy prod.env to .env
         run: cp ops/production/prod.env system/.env
