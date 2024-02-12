@@ -60,9 +60,9 @@ RUN mkdir -p /run/nginx/
 RUN touch /run/nginx/nginx.pid
 
 # Create Supervisor log and PID directories
-RUN mkdir -p /var/log/supervisor
-RUN mkdir -p /var/run/supervisor
-RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
+# RUN mkdir -p /var/log/supervisor
+# RUN mkdir -p /var/run/supervisor
+# RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
 
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
