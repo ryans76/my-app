@@ -1,92 +1,57 @@
-FROM alpine:latest
+FROM mcr.microsoft.com/oryx/php:7.3-20190708.2
+LABEL maintainer="Azure App Services Container Images <appsvc-images@microsoft.com>"
 
-WORKDIR /var/www/html/
+ENV PHP_VERSION 7.3
 
-# Essentials
-RUN echo "UTC" > /etc/timezone
-# RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
-RUN apk add --no-cache zip unzip curl nginx supervisor
+COPY init_container.sh /bin/
+COPY hostingstart.html /home/site/wwwroot/hostingstart.html
 
-# Installing bash
-# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+RUN chmod 755 /bin/init_container.sh \
+    && mkdir -p /home/LogFiles/ \
+    && echo "root:Docker!" | chpasswd \
+    && echo "cd /home/site/wwwroot" >> /etc/bash.bashrc \
+    && ln -s /home/site/wwwroot /var/www/html \
+    && mkdir -p /opt/startup
 
-# Installing PHP
-RUN apk add --no-cache php83 \
-    php83-common \
-    php83-fpm \
-    php83-pdo \
-    php83-opcache \
-    php83-zip \
-    php83-phar \
-    php83-iconv \
-    php83-cli \
-    php83-curl \
-    php83-openssl \
-    php83-mbstring \
-    php83-tokenizer \
-    php83-fileinfo \
-    php83-json \
-    php83-xml \
-    php83-xmlwriter \
-    php83-simplexml \
-    php83-dom \
-    php83-pdo_mysql \
-    php83-tokenizer \
-    php83-pecl-redis
+# configure startup
+COPY sshd_config /etc/ssh/
+COPY ssh_setup.sh /tmp
+RUN mkdir -p /opt/startup \
+   && chmod -R +x /opt/startup \
+   && chmod -R +x /tmp/ssh_setup.sh \
+   && (sleep 1;/tmp/ssh_setup.sh 2>&1 > /dev/null) \
+   && rm -rf /tmp/*
 
-RUN ln -s /usr/bin/php83 /usr/bin/php
+ENV PORT 8080
+ENV SSH_PORT 2222
+EXPOSE 2222 8080
+COPY sshd_config /etc/ssh/
 
-# Installing composer
-# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-# RUN rm -rf composer-setup.php
+ENV WEBSITE_ROLE_INSTANCE_ID localRoleInstance
+ENV WEBSITE_INSTANCE_ID localInstance
+ENV PATH ${PATH}:/home/site/wwwroot
 
-# Configure supervisor
-RUN mkdir -p /etc/supervisor.d/
-COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
+RUN sed -i 's!ErrorLog ${APACHE_LOG_DIR}/error.log!ErrorLog /dev/stderr!g' /etc/apache2/apache2.conf 
+RUN sed -i 's!User ${APACHE_RUN_USER}!User www-data!g' /etc/apache2/apache2.conf 
+RUN sed -i 's!User ${APACHE_RUN_GROUP}!Group www-data!g' /etc/apache2/apache2.conf 
+RUN { \
+   echo 'DocumentRoot /home/site/wwwroot'; \
+   echo 'DirectoryIndex default.htm default.html index.htm index.html index.php hostingstart.html'; \
+   echo 'ServerName localhost'; \
+   echo 'CustomLog /dev/stderr combined'; \
+} >> /etc/apache2/apache2.conf
+RUN rm -f /usr/local/etc/php/conf.d/php.ini \
+   && { \
+                echo 'error_log=/dev/stderr'; \
+                echo 'display_errors=Off'; \
+                echo 'log_errors=On'; \
+                echo 'display_startup_errors=Off'; \
+                echo 'date.timezone=UTC'; \
+                echo 'zend_extension=opcache'; \
+    } > /usr/local/etc/php/conf.d/php.ini
 
-# Configure PHP
-RUN mkdir -p /run/php/
-RUN touch /run/php/php8.3-fpm.pid
+RUN rm -f /etc/apache2/conf-enabled/other-vhosts-access-log.conf
 
-COPY .docker/php-fpm.conf /etc/php83/php-fpm.conf
-COPY .docker/php.ini /etc/php83/php.ini
+WORKDIR /home/site/wwwroot
 
-# Configure nginx
-COPY .docker/nginx.conf /etc/nginx/nginx.conf
-COPY .docker/nginx-laravel.conf /etc/nginx/modules/nginx-laravel.conf
-
-RUN mkdir -p /run/nginx/
-RUN touch /run/nginx/nginx.pid
-
-# Create Supervisor log and PID directories
-# RUN mkdir -p /var/log/supervisor
-# RUN mkdir -p /var/run/supervisor
-# RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
-
-RUN ln -sf /dev/stdout /var/log/nginx/access.log
-RUN ln -sf /dev/stderr /var/log/nginx/error.log
-
-# Building process
-COPY system/ .
-# RUN mkdir -p /var/ops
-# COPY ops/ /var/ops
-
-# CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
-RUN mkdir -p ./storage/framework/cache
-RUN mkdir -p ./storage/framework/sessions
-RUN mkdir -p ./storage/framework/testing
-RUN mkdir -p ./storage/framework/views
-RUN mkdir -p ./storage/logs
-
-# RUN npm install -g yarn
-# RUN yarn install
-
-# RUN composer install --no-dev
-# RUN chown -R nobody:nobody /var/www/html/storage
-# COPY system/startup.sh /usr/local/bin/startup.sh
-# RUN chmod u+x /usr/local/bin/startup.sh
-# RUN chmod u+x /usr/local/bin/startup.sh
-
-EXPOSE 80 2222
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+ENTRYPOINT ["/bin/init_container.sh"]
