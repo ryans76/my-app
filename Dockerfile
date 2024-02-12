@@ -89,4 +89,4 @@ RUN mkdir -p ./storage/logs
 # RUN chmod u+x /usr/local/bin/startup.sh
 
 EXPOSE 80 2222
-CMD ["supervisord", "-c", "-n", "/etc/supervisor.d/supervisord.ini"]
+CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
