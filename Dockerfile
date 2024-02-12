@@ -5,7 +5,7 @@ WORKDIR /var/www/html/
 # Essentials
 RUN echo "UTC" > /etc/timezone
 # RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev
-RUN apk add --no-cache zip unzip curl nginx
+RUN apk add --no-cache zip unzip curl nginx supervisor
 
 # Installing bash
 # RUN apk add bash
@@ -43,8 +43,8 @@ RUN ln -s /usr/bin/php83 /usr/bin/php
 # RUN rm -rf composer-setup.php
 
 # Configure supervisor
-# RUN mkdir -p /etc/supervisor.d/
-# COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
+RUN mkdir -p /etc/supervisor.d/
+COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
 
 # Configure PHP
 RUN mkdir -p /run/php/
@@ -86,5 +86,5 @@ RUN mkdir -p ./storage/logs
 # RUN composer install --no-dev
 # RUN chown -R nobody:nobody /var/www/html/storage
 
-EXPOSE 8080
-# CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+EXPOSE 80
+CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
