@@ -8,7 +8,7 @@ RUN echo "UTC" > /etc/timezone
 RUN apk add --no-cache zip unzip curl nginx supervisor
 
 # Installing bash
-RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 # Installing PHP
 RUN apk add --no-cache php83 \
