@@ -53,8 +53,8 @@ COPY .docker/php-fpm.conf /etc/php83/php-fpm.conf
 COPY .docker/php.ini /etc/php83/php.ini
 
 # Configure nginx
-COPY .docker/nginx.conf /etc/nginx/
-COPY .docker/nginx-laravel.conf /etc/nginx/modules/
+COPY .docker/nginx.conf /etc/nginx/nginx.conf
+COPY .docker/nginx-laravel.conf /etc/nginx/modules/nginx-laravel.conf
 
 RUN mkdir -p /run/nginx/
 RUN touch /run/nginx/nginx.pid
