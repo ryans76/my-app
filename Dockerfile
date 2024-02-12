@@ -84,5 +84,5 @@ RUN yarn install
 RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
-EXPOSE 80 2222
+EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
