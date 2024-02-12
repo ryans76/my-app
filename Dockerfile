@@ -86,5 +86,5 @@ RUN mkdir -p ./storage/logs
 # RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
-EXPOSE 80
+EXPOSE 3000
 # CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
