@@ -69,7 +69,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
-COPY system/ .
+COPY system/ /var/www/html/
 # RUN mkdir -p /var/ops
 # COPY ops/ /var/ops
 
