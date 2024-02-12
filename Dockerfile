@@ -4,10 +4,9 @@ WORKDIR /var/www/html/
 
 # Essentials
 RUN echo "UTC" > /etc/timezone
-RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev
+RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
 
 # Installing bash
-RUN apk add bash
 RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 # Installing PHP
@@ -85,5 +84,5 @@ RUN yarn install
 RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
-EXPOSE 80
+EXPOSE 80 2222
 CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
