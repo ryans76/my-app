@@ -14,27 +14,24 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-      - name: Copy prod.env to .env
-        run: cp ops/production/prod.env system/.env
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Log in to registry
+      uses: docker/login-action@v2
+      with:
+        registry: https://myappcr123.azurecr.io/
+        username: ${{ secrets.AzureAppService_ContainerUsername_0a28e8a0fb804aaca0ebab71d9f88b09 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_81f1a6c963564a27bee0ccbbac9519f5 }}
 
-      - name: Log in to registry
-        uses: docker/login-action@v2
-        with:
-          registry: https://myappcr123.azurecr.io/
-          username: ${{ secrets.AzureAppService_ContainerUsername_f5acafaa03fe49cb80536cf3d205441b }}
-          password: ${{ secrets.AzureAppService_ContainerPassword_646f5c35b5164c1a9c836860a8656f32 }}
-
-      - name: Build and push container image to registry
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: myappcr123.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_f5acafaa03fe49cb80536cf3d205441b }}/myapp:${{ github.sha }}
-          file: ./Dockerfile
+    - name: Build and push container image to registry
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: myappcr123.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0a28e8a0fb804aaca0ebab71d9f88b09 }}/myapp:${{ github.sha }}
+        file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
@@ -44,11 +41,11 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'my-app-webapp123'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_04fa787032e44754a0a0e2caf3441d54 }}
-          images: 'myappcr123.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_f5acafaa03fe49cb80536cf3d205441b }}/myapp:${{ github.sha }}'
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'my-app-webapp123'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_8660a1324c2b42b7be424ea94a88d958 }}
+        images: 'myappcr123.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0a28e8a0fb804aaca0ebab71d9f88b09 }}/myapp:${{ github.sha }}'
