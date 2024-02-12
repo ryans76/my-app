@@ -4,12 +4,11 @@ WORKDIR /var/www/html/
 
 # Essentials
 RUN echo "UTC" > /etc/timezone
-# RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev
-RUN apk add --no-cache zip unzip curl nginx supervisor
+RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev
 
 # Installing bash
-# RUN apk add bash
-# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+RUN apk add bash
+RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
 # Installing PHP
 RUN apk add --no-cache php83 \
@@ -38,9 +37,9 @@ RUN apk add --no-cache php83 \
 RUN ln -s /usr/bin/php83 /usr/bin/php
 
 # Installing composer
-# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-# RUN rm -rf composer-setup.php
+RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
+RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN rm -rf composer-setup.php
 
 # Configure supervisor
 RUN mkdir -p /etc/supervisor.d/
@@ -70,8 +69,8 @@ RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Building process
 COPY system/ /var/www/html/
-# RUN mkdir -p /var/ops
-# COPY ops/ /var/ops
+RUN mkdir -p /var/ops
+COPY ops/ /var/ops
 
 # CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
 RUN mkdir -p ./storage/framework/cache
@@ -80,11 +79,11 @@ RUN mkdir -p ./storage/framework/testing
 RUN mkdir -p ./storage/framework/views
 RUN mkdir -p ./storage/logs
 
-# RUN npm install -g yarn
-# RUN yarn install
+RUN npm install -g yarn
+RUN yarn install
 
-# RUN composer install --no-dev
-# RUN chown -R nobody:nobody /var/www/html/storage
+RUN composer install --no-dev
+RUN chown -R nobody:nobody /var/www/html/storage
 
 EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
