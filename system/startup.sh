@@ -1,13 +1,13 @@
-#!/bin/bash
+#!/bin/sh
+set -e
+ssh-keygen -A
+#prepare run dir
+if [ ! -d "/var/run/sshd" ]; then
+  mkdir -p /var/run/sshd
+fi
 
-# echo "Copying custom default.conf over to /etc/nginx/sites-available/default.conf"
+echo "Starting SSH ..."
+service ssh start
 
-# NGINX_CONF=/home/site/wwwroot/default.conf
-
-# if [ -f "$NGINX_CONF" ]; then
-#     cp /home/site/wwwroot/default.conf /etc/nginx/sites-available/default
-# echo "restart nginx"
-# service nginx reload
-# else
-#     echo "File does not exist, skipping cp."
-# fi
+/usr/bin/supervisord -n -c /etc/supervisor/supervisord.ini
+exec "$@"
