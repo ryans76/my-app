@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:latest as base
 
 WORKDIR /var/www/html/
 
@@ -86,5 +86,5 @@ RUN mkdir -p ./storage/logs
 # RUN composer install --no-dev
 RUN chown -R nobody:nobody /var/www/html/storage
 
-EXPOSE 443
+EXPOSE 8080
 # CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
