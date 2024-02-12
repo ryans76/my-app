@@ -6,8 +6,8 @@
 
 # if [ -f "$NGINX_CONF" ]; then
 #     cp /home/site/wwwroot/default.conf /etc/nginx/sites-available/default
-echo "restart nginx"
-service nginx reload
+# echo "restart nginx"
+# service nginx reload
 # else
 #     echo "File does not exist, skipping cp."
 # fi
