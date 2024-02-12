@@ -4,7 +4,8 @@ WORKDIR /var/www/html/
 
 # Essentials
 RUN echo "UTC" > /etc/timezone
-RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
+# RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
+RUN apk add --no-cache zip unzip curl nginx supervisor
 
 # Installing bash
 RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
