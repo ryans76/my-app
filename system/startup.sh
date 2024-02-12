@@ -9,5 +9,5 @@ fi
 echo "Starting SSH ..."
 service ssh start
 
-/usr/bin/supervisord -n -c /etc/supervisor/supervisord.ini
+/usr/bin/supervisord -n -c /etc/supervisor.d/supervisord.ini
 exec "$@"
