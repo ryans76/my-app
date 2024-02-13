@@ -1,6 +1,6 @@
-FROM alpine:3.19
+FROM alpine:3.16
 
-ARG PHP_VERSION="8.3"
+ARG PHP_VERSION="8.0.30-r0"
 
 # https://github.com/wp-cli/wp-cli/issues/3840
 ENV PAGER="more"
