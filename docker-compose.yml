@@ -1,0 +1,122 @@
+version: "3.6"
+
+x-php-variables: &php-variables
+  DB_HOST: test-mysql
+  DB_NAME: myapp
+  DB_USER: root
+  DB_PASSWORD:
+  DB_PORT: 3310
+
+services:
+  test-app:
+    image: test:fpm
+    container_name: test_web
+    environment: *php-variables
+    build:
+      context: .
+      target: base
+    volumes:
+      - ./system:/var/www/html
+    ports:
+      - "80"
+    #      - "8080:80"
+    external_links:
+      - nginx-proxy:my.local
+    #    networks:
+    #      - leadamp
+    depends_on:
+      - leadamp-mysql
+      - leadamp-redis
+      - leadamp-queue
+
+  leadamp-nginx:
+    image: leadamp:nginx
+    container_name: leadamp_nginx
+    #    ports:
+    #      - "80:80"
+    volumes:
+      - ./system:/var/www/html
+    environment:
+      VIRTUAL_HOST: leadamp.clearlink.local
+      HSTS: "off"
+      HTTPS_METHOD: noredirect
+      APP_DOMAIN: leadamp.clearlink.local
+      PHP_FPM_HOST: leadamp-app
+    depends_on:
+      - leadamp-app
+  #    networks:
+  #      - leadamp
+
+  leadamp-mysql:
+    image: mysql:8.0
+#    environment: *php-variables
+    container_name: leadamp_db
+    restart: always
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+    volumes:
+      - leadampdata:/var/lib/mysql
+      - ./mysql/config:/etc/mysql/conf.d:ro
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - ${DB_HOST_PORT-3316}:3306
+
+  leadamp-queue:
+    image: leadamp:fpm
+    command: [ "/start-queue.sh" ]
+    #    networks:
+    #      leadamp:
+    environment:
+      PHP_IDE_CONFIG: "serverName=leadamp.clearlink.local"
+      XDEBUG: ${XDEBUG:-false}
+      PHP_OPCACHE_VALIDATE_TIMESTAMPS: 1
+      PHP_OPCACHE_MAX_ACCELERATED_FILES: 10000
+      PHP_OPCACHE_MEMORY_CONSUMPTION: 128
+    external_links:
+      - sso:sso.clearlink.test
+    volumes:
+      - ./:/app:cached
+      - ./system:/system
+
+  leadamp-redis:
+    image: redis:6-alpine
+    container_name: leadamp_redis
+    restart: always
+    #    networks:
+    #      - leadamp
+    ports:
+      - "6378:6378"
+#    sysctls:
+#      - net.core.somaxconn=1024
+
+  leadamp-npm:
+    image: node:14-alpine
+    container_name: leadamp_npm
+    volumes:
+      - ./system:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: [ 'npm' ]
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: ins-nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+      - 5173:5173
+    volumes:
+      - ./.docker/certs:/etc/nginx/certs
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+networks:
+  default:
+    name: ins-nginx-proxy
+    external: true
+
+volumes:
+  leadampdata:
