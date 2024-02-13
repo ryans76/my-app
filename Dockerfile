@@ -1,104 +1,94 @@
-FROM ubuntu:16.04
-LABEL MAINTAINER Goavega Docker Maintainers
-#setup environment variables
-#version variables
-ENV NGINX_VERSION 1.12.1-1~xenial
-ENV FPM_VERSION 7.0.30-0ubuntu0.16.04.1
-ENV PHP_VERSION 1:7.0+35ubuntu6
-ENV DOCKER_BUILD_DIR /dockerbuild
+FROM alpine:latest
 
-#directories
-ENV NGINX_CONF /etc/nginx/nginx.conf
-ENV APP_HOME /home/site/wwwroot/
-#php confs
-ENV php_scan_ini_dir /etc/php/7.0/mods-available/
-ENV php_conf /etc/php/7.0/fpm/php.ini
-ENV fpm_conf /etc/php/7.0/fpm/php-fpm.conf
-ENV fpm_pool /etc/php/7.0/fpm/pool.d/www.conf
-ENV NGINX_LOG_DIR /home/LogFiles/nginx/
-# ssh
+WORKDIR /home/site/wwwroot/
 ENV SSH_PASSWD "root:Docker!"
 
+# Essentials
+RUN echo "UTC" > /etc/timezone
+# RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
+RUN apk add --no-cache zip unzip curl nginx supervisor
 
-WORKDIR $DOCKER_BUILD_DIR
+# Installing bash
+# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
 
-#---------------|
-# nginx         |
-#---------------|
-RUN apt-get update \
-	&& apt-get install --no-install-recommends --no-install-suggests -y gnupg \
-	&& \
-	NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
-	found=''; \
-	for server in \
-	ha.pool.sks-keyservers.net \
-	hkp://keyserver.ubuntu.com:80 \
-	hkp://p80.pool.sks-keyservers.net:80 \
-	pgp.mit.edu \
-	; do \
-	echo "Fetching GPG key $NGINX_GPGKEY from $server"; \
-	apt-key adv --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
-	done; \
-	test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
-	apt-get -y --purge autoremove && rm -rf /var/lib/apt/lists/* \
-	&& echo "deb http://nginx.org/packages/ubuntu/ xenial nginx" >> /etc/apt/sources.list \
-	&& apt-get update \
-	&& apt-get install --no-install-recommends --no-install-suggests -y nginx=${NGINX_VERSION} gettext-base
-#--------------|
-# php-fpm + mod|
-#--------------|
-RUN set -e \
-	&& apt-get update \
-	&& apt-get install --no-install-recommends --no-install-suggests -y php7.0-fpm=${FPM_VERSION} php7.0-mysql=${FPM_VERSION} \
-	## install extensions that we might need
-	# Wordpress Requirements
-	&& apt-get -y --no-install-recommends --no-install-suggests install php7.0-xml=${FPM_VERSION} php7.0-mbstring=${FPM_VERSION} php7.0-bcmath=${FPM_VERSION} php7.0-zip=${FPM_VERSION} php7.0-curl=${FPM_VERSION} php7.0-gd=${FPM_VERSION} php7.0-intl=${FPM_VERSION} php7.0-imap=${FPM_VERSION} php7.0-pspell=${FPM_VERSION} php7.0-recode=${FPM_VERSION} php7.0-tidy=${FPM_VERSION} php7.0-xmlrpc=${FPM_VERSION} \
-	#-------------|
-	# ssh         |
-	#-------------|
-	&& apt-get install -y --no-install-recommends openssh-server supervisor \
-	&& echo "$SSH_PASSWD" | chpasswd \
-	#clean up
-	&& rm -rf /var/lib/apt/lists/* \
-	&& apt-get purge -y \
-	&& apt-get autoremove -y \
-	&& echo "daemon off;" >> ${NGINX_CONF}
+# Installing PHP
+RUN apk add --no-cache php83 \
+    php83-common \
+    php83-fpm \
+    php83-pdo \
+    php83-opcache \
+    php83-zip \
+    php83-phar \
+    php83-iconv \
+    php83-cli \
+    php83-curl \
+    php83-openssl \
+    php83-mbstring \
+    php83-tokenizer \
+    php83-fileinfo \
+    php83-json \
+    php83-xml \
+    php83-xmlwriter \
+    php83-simplexml \
+    php83-dom \
+    php83-pdo_mysql \
+    php83-tokenizer \
+    php83-pecl-redis
 
-# Hacks Nginx and php-fpm config (docker nginx runs nginx user - change fpm to use same user)
-RUN set -ex && \
-	sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" ${php_conf} && \
-	sed -i -e "s/upload_max_filesize\s*=\s*2M/upload_max_filesize = 8M/g" ${php_conf} && \
-	sed -i -e "s/post_max_size\s*=\s*8M/post_max_size = 8M/g" ${php_conf} && \
-	sed -i -e "s/variables_order = \"GPCS\"/variables_order = \"EGPCS\"/g" ${php_conf} && \
-	sed -i -e "s/listen = 127.0.0.1:9000/listen = \/run\/php7.0-fpm.sock/g" ${fpm_pool} && \
-	sed -i -e "s/listen.owner = www-data/listen.owner = nginx/g" ${fpm_pool} && \
-	sed -i -e "s/listen.group = www-data/listen.group = nginx/g" ${fpm_pool} && \
-	sed -i -e "s/user = www-data/user = nginx/g" ${fpm_pool} && \
-	sed -i -e "s/group = www-data/group = nginx/g" ${fpm_pool} && \
-	sed -i -e "s/;catch_workers_output\s*=\s*no/catch_workers_output = yes/g" ${fpm_pool} && \
-	sed -i -e "s/;catch_workers_output\s*=\s*yes/catch_workers_output = yes/g" ${fpm_pool}
-#link log files to /home
-RUN rm -rf /var/log/nginx/ \
-	&& mkdir -p ${NGINX_LOG_DIR} \
-	&& ln -s /home/LogFiles/nginx /var/log/nginx
-#copy configs
-COPY ./confs/default.conf /etc/nginx/conf.d/
-COPY ./system/* /home/site/wwwroot/
-COPY ./entrypoint.sh /usr/local/bin/
-COPY ./confs/sshd_config /etc/ssh/
-COPY ./confs/opcache.ini ${php_scan_ini_dir}
-# COPY ./wp_env.sh /usr/local/bin/
+RUN ln -s /usr/bin/php83 /usr/bin/php
 
-#hostname that nginx listens to
-ENV NGINX_HOST "_"
-ENV NGINX_PERM_REDIR "azurewebsites.com"
+# Installing composer
+# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
+# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+# RUN rm -rf composer-setup.php
 
-# RUN chmod u+x /usr/local/bin/wp_env.sh
-RUN chmod u+x /usr/local/bin/entrypoint.sh
+# Configure supervisor
+RUN mkdir -p /etc/supervisor.d/
+COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
 
-WORKDIR ${APP_HOME}
+# Configure PHP
+RUN mkdir -p /run/php/
+RUN touch /run/php/php8.3-fpm.pid
 
-STOPSIGNAL SIGTERM
+COPY .docker/php-fpm.conf /etc/php83/php-fpm.conf
+COPY .docker/php.ini /etc/php83/php.ini
+
+# Configure nginx
+COPY .docker/nginx.conf /etc/nginx/nginx.conf
+COPY .docker/nginx-laravel.conf /etc/nginx/modules/nginx-laravel.conf
+
+RUN mkdir -p /run/nginx/
+RUN touch /run/nginx/nginx.pid
+
+# Create Supervisor log and PID directories
+RUN mkdir -p /var/log/supervisor
+# RUN mkdir -p /var/run/supervisor
+# RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
+
+RUN ln -sf /dev/stdout /var/log/nginx/access.log
+RUN ln -sf /dev/stderr /var/log/nginx/error.log
+
+# Building process
+COPY system/ .
+# RUN mkdir -p /var/ops
+# COPY ops/ /var/ops
+
+# CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
+RUN mkdir -p ./storage/framework/cache
+RUN mkdir -p ./storage/framework/sessions
+RUN mkdir -p ./storage/framework/testing
+RUN mkdir -p ./storage/framework/views
+RUN mkdir -p ./storage/logs
+
+# RUN npm install -g yarn
+# RUN yarn install
+
+# RUN composer install --no-dev
+# RUN chown -R nobody:nobody /var/www/html/storage
+# COPY system/startup.sh /usr/local/bin/startup.sh
+# RUN chmod u+x /usr/local/bin/startup.sh
+# RUN chmod u+x /usr/local/bin/startup.sh
+# RUN chmod u+x /usr/local/bin/entrypoint.sh
+
 EXPOSE 80 2222
-
-CMD ["entrypoint.sh"]
+CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
