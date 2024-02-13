@@ -1,94 +1,82 @@
-FROM alpine:latest
+FROM alpine:3.16
+LABEL Maintainer="Stanislav Khromov <stanislav+github@khromov.se>" \
+      Description="Lightweight container with Nginx 1.22 & PHP-FPM 8 based on Alpine Linux."
 
-WORKDIR /home/site/wwwroot/
-ENV SSH_PASSWD "root:Docker!"
+ARG PHP_VERSION="8.0.30-r0"
 
-# Essentials
-RUN echo "UTC" > /etc/timezone
-# RUN apk add --no-cache zip unzip curl nginx supervisor git nodejs npm php-bcmath libpng-dev libxml2-dev bash
-RUN apk add --no-cache zip unzip curl nginx supervisor
+# https://github.com/wp-cli/wp-cli/issues/3840
+ENV PAGER="more"
 
-# Installing bash
-# RUN sed -i 's/bin\/ash/bin\/bash/g' /etc/passwd
+# Install packages and remove default server definition
+RUN apk --no-cache add php8=${PHP_VERSION} \
+    php8-ctype \
+    php8-curl \
+    php8-dom \
+    php8-exif \
+    php8-fileinfo \
+    php8-fpm \
+    php8-gd \
+    php8-iconv \
+    php8-intl \
+    php8-mbstring \
+    php8-mysqli \
+    php8-opcache \
+    php8-openssl \
+    php8-pecl-imagick \
+    php8-pecl-redis \
+    php8-phar \
+    php8-session \
+    php8-simplexml \
+    php8-soap \
+    php8-xml \
+    php8-xmlreader \
+    php8-zip \
+    php8-zlib \
+    php8-pdo \
+    php8-xmlwriter \
+    php8-tokenizer \
+    php8-pdo_mysql \
+    php8-pdo_sqlite \
+    nginx supervisor curl tzdata htop mysql-client dcron
 
-# Installing PHP
-RUN apk add --no-cache php83 \
-    php83-common \
-    php83-fpm \
-    php83-pdo \
-    php83-opcache \
-    php83-zip \
-    php83-phar \
-    php83-iconv \
-    php83-cli \
-    php83-curl \
-    php83-openssl \
-    php83-mbstring \
-    php83-tokenizer \
-    php83-fileinfo \
-    php83-json \
-    php83-xml \
-    php83-xmlwriter \
-    php83-simplexml \
-    php83-dom \
-    php83-pdo_mysql \
-    php83-tokenizer \
-    php83-pecl-redis
+# Symlink php8 => php
+# RUN ln -s /usr/bin/php8 /usr/bin/php
 
-RUN ln -s /usr/bin/php83 /usr/bin/php
-
-# Installing composer
-# RUN curl -sS https://getcomposer.org/installer -o composer-setup.php
-# RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-# RUN rm -rf composer-setup.php
-
-# Configure supervisor
-RUN mkdir -p /etc/supervisor.d/
-COPY .docker/supervisord.ini /etc/supervisor.d/supervisord.ini
-
-# Configure PHP
-RUN mkdir -p /run/php/
-RUN touch /run/php/php8.3-fpm.pid
-
-COPY .docker/php-fpm.conf /etc/php83/php-fpm.conf
-COPY .docker/php.ini /etc/php83/php.ini
+# Install PHP tools
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x wp-cli.phar && mv wp-cli.phar /usr/local/bin/wp
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
 # Configure nginx
-COPY .docker/nginx.conf /etc/nginx/nginx.conf
-COPY .docker/nginx-laravel.conf /etc/nginx/modules/nginx-laravel.conf
+COPY config/nginx.conf /etc/nginx/nginx.conf
 
-RUN mkdir -p /run/nginx/
-RUN touch /run/nginx/nginx.pid
+# Configure PHP-FPM
+COPY config/fpm-pool.conf /etc/php8/php-fpm.d/www.conf
+COPY config/php.ini /etc/php8/conf.d/custom.ini
 
-# Create Supervisor log and PID directories
-RUN mkdir -p /var/log/supervisor
-# RUN mkdir -p /var/run/supervisor
-# RUN chown -R nobody:nobody /var/log/supervisor /var/run/supervisor
+# Configure supervisord
+COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN ln -sf /dev/stdout /var/log/nginx/access.log
-RUN ln -sf /dev/stderr /var/log/nginx/error.log
+# Setup document root
+RUN mkdir -p /var/www/html
 
-# Building process
-COPY system/ .
-# RUN mkdir -p /var/ops
-# COPY ops/ /var/ops
+# Make sure files/folders needed by the processes are accessable when they run under the nobody user
+RUN chown -R nobody.nobody /var/www/html && \
+  chown -R nobody.nobody /run && \
+  chown -R nobody.nobody /var/lib/nginx && \
+  chown -R nobody.nobody /var/log/nginx
 
-# CREATING THE FOLLOWING DIRECTORIES BECAUSE LARAVEL COMPLAINS ABOUT A INVALID CACHE PATH IF THEY DONT EXIST
-RUN mkdir -p ./storage/framework/cache
-RUN mkdir -p ./storage/framework/sessions
-RUN mkdir -p ./storage/framework/testing
-RUN mkdir -p ./storage/framework/views
-RUN mkdir -p ./storage/logs
+# Switch to use a non-root user from here on
+USER nobody
 
-# RUN npm install -g yarn
-# RUN yarn install
+# Add application
+WORKDIR /var/www/html
+COPY --chown=nobody system/ /var/www/html/
 
-# RUN composer install --no-dev
-# RUN chown -R nobody:nobody /var/www/html/storage
-# COPY system/startup.sh /usr/local/bin/startup.sh
-# RUN chmod u+x /usr/local/bin/startup.sh
-# RUN chmod u+x /usr/local/bin/startup.sh
-# RUN chmod u+x /usr/local/bin/entrypoint.sh
+# Expose the port nginx is reachable on
+EXPOSE 8080
 
-EXPOSE 80 2222
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+# Configure a healthcheck to validate that everything is up&running
+HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping
